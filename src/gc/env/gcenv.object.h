@@ -35,12 +35,16 @@ public:
 #define MTFlag_HasFinalizer 2
 #define MTFlag_IsArray 4
 
+class CGCDesc;
+
 class MethodTable
 {
 public:
     uint16_t    m_componentSize;
     uint16_t    m_flags;
     uint32_t    m_baseSize;
+
+	CGCDesc		* m_gcDesc;
 
     MethodTable * m_pRelatedType;
 
@@ -50,7 +54,13 @@ public:
         m_baseSize = 3 * sizeof(void *);
         m_componentSize = 1;
         m_flags = 0;
+		m_gcDesc = NULL;
     }
+
+	CGCDesc* GetGCDesc()
+	{
+		return m_gcDesc;
+	}
 
     uint32_t GetBaseSize()
     {
@@ -92,11 +102,13 @@ public:
         return (m_flags & MTFlag_IsArray) != 0;
     }
 
+	/*
     MethodTable * GetParent()
     {
         _ASSERTE(!IsArray());
         return m_pRelatedType;
     }
+	*/
 
     bool SanityCheck()
     {
@@ -107,11 +119,12 @@ public:
 class Object
 {
     MethodTable * m_pMethTab;
+	ObjHeader m_header;
 
 public:
     ObjHeader * GetHeader()
     { 
-        return ((ObjHeader *)this) - 1;
+		return &m_header;
     }
 
     MethodTable * RawGetMethodTable() const

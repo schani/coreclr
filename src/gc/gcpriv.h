@@ -4078,15 +4078,15 @@ size_t generation_unusable_fragmentation (generation* inst)
                     (1.0f-generation_allocator_efficiency(inst))*generation_free_list_space (inst));
 }
 
-#define plug_skew           sizeof(ObjHeader)
-#define min_obj_size        (sizeof(uint8_t*)+plug_skew+sizeof(size_t))//syncblock + vtable+ first field
+#define plug_skew           0 //sizeof(ObjHeader)
+#define min_obj_size        (sizeof(uint8_t*)+sizeof(ObjHeader)+sizeof(size_t))//syncblock + vtable+ first field
 //Note that this encodes the fact that plug_skew is a multiple of uint8_t*.
 // We always use USE_PADDING_TAIL when fitting so items on the free list should be
 // twice the min_obj_size.
 #define min_free_list       (2*min_obj_size)
 struct plug
 {
-    uint8_t *  skew[plug_skew / sizeof(uint8_t *)];
+    //uint8_t *  skew[plug_skew / sizeof(uint8_t *)];
 };
 
 class pair

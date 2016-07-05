@@ -171,7 +171,7 @@ public:
 
         _ASSERTE(mt->ContainsPointersOrCollectible());
 
-        return PTR_CGCDesc(mt);
+		return PTR_CGCDesc(mt->GetGCDesc());
     }
 
     size_t GetNumSeries ()

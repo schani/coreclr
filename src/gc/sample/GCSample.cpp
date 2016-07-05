@@ -110,7 +110,9 @@ void WriteBarrier(Object ** dst, Object * ref)
     ErectWriteBarrier(dst, ref);
 }
 
-int __cdecl main(int argc, char* argv[])
+//int __cdecl main(int argc, char* argv[])
+extern "C"
+int gcsample_main (void)
 {
     //
     // Initialize system info
@@ -160,39 +162,36 @@ int __cdecl main(int argc, char* argv[])
         Object * m_pOther2;
     };
 
-    static struct My_MethodTable
-    {
-        // GCDesc
-        CGCDescSeries m_series[2];
-        size_t m_numSeries;
+	static struct My_GCDesc
+	{
+		// GCDesc
+		CGCDescSeries m_series[2];
+		size_t m_numSeries;
+	}
+	My_GCDesc;
+	static MethodTable My_MethodTable;
 
-        // The actual methodtable
-        MethodTable m_MT;
-    }
-    My_MethodTable;
-
-    // 'My' contains the MethodTable*
+    // 'My' contains the MethodTable* and the ObjHeader
     uint32_t baseSize = sizeof(My);
-    // GC expects the size of ObjHeader (extra void*) to be included in the size.
-    baseSize = baseSize + sizeof(ObjHeader);
     // Add padding as necessary. GC requires the object size to be at least MIN_OBJECT_SIZE.
-    My_MethodTable.m_MT.m_baseSize = max(baseSize, MIN_OBJECT_SIZE);
+    My_MethodTable.m_baseSize = max(baseSize, MIN_OBJECT_SIZE);
 
-    My_MethodTable.m_MT.m_componentSize = 0;    // Array component size
-    My_MethodTable.m_MT.m_flags = MTFlag_ContainsPointers;
+    My_MethodTable.m_componentSize = 0;    // Array component size
+    My_MethodTable.m_flags = MTFlag_ContainsPointers;
+	My_MethodTable.m_gcDesc = (CGCDesc*)((&My_GCDesc.m_numSeries) + 1);
 
-    My_MethodTable.m_numSeries = 2;
+    My_GCDesc.m_numSeries = 2;
 
     // The GC walks the series backwards. It expects the offsets to be sorted in descending order.
-    My_MethodTable.m_series[0].SetSeriesOffset(offsetof(My, m_pOther2));
-    My_MethodTable.m_series[0].SetSeriesCount(1);
-    My_MethodTable.m_series[0].seriessize -= My_MethodTable.m_MT.m_baseSize;
+    My_GCDesc.m_series[0].SetSeriesOffset(offsetof(My, m_pOther2));
+    My_GCDesc.m_series[0].SetSeriesCount(1);
+    My_GCDesc.m_series[0].seriessize -= My_MethodTable.m_baseSize;
 
-    My_MethodTable.m_series[1].SetSeriesOffset(offsetof(My, m_pOther1));
-    My_MethodTable.m_series[1].SetSeriesCount(1);
-    My_MethodTable.m_series[1].seriessize -= My_MethodTable.m_MT.m_baseSize;
+    My_GCDesc.m_series[1].SetSeriesOffset(offsetof(My, m_pOther1));
+    My_GCDesc.m_series[1].SetSeriesCount(1);
+    My_GCDesc.m_series[1].seriessize -= My_MethodTable.m_baseSize;
 
-    MethodTable * pMyMethodTable = &My_MethodTable.m_MT;
+    MethodTable * pMyMethodTable = &My_MethodTable;
 
     // Allocate instance of MyObject
     Object * pObj = AllocateObject(pMyMethodTable);
